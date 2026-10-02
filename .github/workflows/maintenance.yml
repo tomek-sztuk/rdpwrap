@@ -1,0 +1,24 @@
+name: Build maintenance installer
+on:
+  push:
+    paths: ['src-maintenance/**', 'src-installer/resource.res', 'res/rdpwrap.ini', '.github/workflows/maintenance.yml']
+  pull_request:
+    paths: ['src-maintenance/**', 'src-installer/resource.res', 'res/rdpwrap.ini', '.github/workflows/maintenance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build-and-test:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run isolated maintenance tests
+        shell: powershell
+        run: ./src-maintenance/build.ps1 -Test
+      - uses: actions/upload-artifact@v4
+        with:
+          name: RDPWrap-Maintenance
+          path: |
+            bin/RDPWMaint.exe
+            docs/maintenance.md
+            LICENSE
