@@ -1,5 +1,21 @@
 # RDP Wrapper Library by Stas'M
 
+### Fork: unattended maintenance after Windows Update
+
+This fork adds `RDPWMaint.exe`, a standalone maintenance installer that detects
+changed Windows builds, restored service registrations, missing or corrupted
+Wrapper DLLs, unsupported INI entries and unloaded/stopped services. It repairs
+only when necessary and refuses changes while any remote session is present.
+The original system DLL, firewall, authentication and graphics settings are preserved.
+
+Build with `./src-maintenance/build.ps1 -Test`, then run `bin/RDPWMaint.exe --auto`
+as administrator. `--check` is diagnostic; `--register-task` optionally installs a
+protected SYSTEM task for boot/hourly maintenance. No task is created implicitly.
+
+See [maintenance documentation](docs/maintenance.md) for commands, safeguards,
+source selection, backups, limits and test coverage.
+Polish instructions: [automatyczna instalacja i naprawa](docs/maintenance-pl.md).
+
 [![Telegram](https://img.shields.io/badge/chat-Telegram-blue.svg)](https://t.me/rdpwrap)
 ![Environment](https://img.shields.io/badge/Windows-Vista,%207,%208,%2010-brightgreen.svg)
 [![Release](https://img.shields.io/github/release/stascorp/rdpwrap.svg)](https://github.com/stascorp/rdpwrap/releases)
