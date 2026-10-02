@@ -142,7 +142,23 @@ namespace RdpWrapMaintenance {
                     var fake = Fixture(payload, current, image); fake.Runtime = "Unknown"; fake.IsAdmin = false; fake.Sessions.Add(Remote("Active")); var engine = EngineFor(fake, payload); Assert(engine.Run() == 0 && fake.Stops == 0, "Working host disturbed");
                 });
                 Test("Unreadable modules do not trigger speculative restart", () => {
-                    var fake = Fixture(payload, current, image); fake.Runtime = "Unknown"; var engine = EngineFor(fake, payload); Assert(engine.Run() == 1 && fake.Stops == 0, "Blind restart");
+                    var fake = Fixture(payload, current, image); fake.Runtime = "Unknown"; var engine = EngineFor(fake, payload); Assert(engine.Run() == 1 && fake.Stops == 0 && (string)engine.Report["State"] == "VerificationIncomplete" && (string)engine.Report["Reason"] == "RuntimeInspectionUnavailable", "Blind restart or installation fault reported");
+                });
+                Test("Non-admin check explains incomplete verification with disconnected remote", () => {
+                    var fake = Fixture(payload, current, image); fake.Runtime = "Unknown"; fake.IsAdmin = false; fake.Sessions.Add(Remote("Disconnected")); var engine = EngineFor(fake, payload, true);
+                    Assert(engine.Run() == 4 && (string)engine.Report["State"] == "VerificationIncomplete" && (string)engine.Report["Reason"] == "AdministratorRequiredForRuntimeInspection" && engine.Report.ContainsKey("Message") && engine.Report.ContainsKey("NextAction") && fake.Stops == 0 && fake.Starts == 0 && !(bool)engine.Report["NetworkUsed"], Program.Json.Serialize(engine.Report));
+                });
+                Test("Non-admin auto reports verification limit without attempting repair", () => {
+                    var fake = Fixture(payload, current, image); fake.Runtime = "Unknown"; fake.IsAdmin = false; fake.Sessions.Add(Remote("Disconnected")); var engine = EngineFor(fake, payload);
+                    Assert(engine.Run() == 4 && (string)engine.Report["State"] == "VerificationIncomplete" && fake.Stops == 0 && fake.Starts == 0 && !(bool)engine.Report["Applied"] && !(bool)engine.Report["NetworkUsed"], Program.Json.Serialize(engine.Report));
+                });
+                Test("Admin check preserves unreadable-runtime limitation", () => {
+                    var fake = Fixture(payload, current, image); fake.Runtime = "Unknown"; var engine = EngineFor(fake, payload, true);
+                    Assert(engine.Run() == 1 && (string)engine.Report["State"] == "VerificationIncomplete" && (string)engine.Report["Reason"] == "RuntimeInspectionUnavailable" && fake.Stops == 0, Program.Json.Serialize(engine.Report));
+                });
+                Test("Unknown runtime does not hide a failed listener", () => {
+                    var fake = Fixture(payload, current, image); fake.Runtime = "Unknown"; fake.IsAdmin = false; fake.Listener = false; var engine = EngineFor(fake, payload, true);
+                    Assert(engine.Run() == 1 && (string)engine.Report["State"] == "NeedsAttention" && fake.Stops == 0, Program.Json.Serialize(engine.Report));
                 });
                 Test("Malformed installed INI stops before contacting sources", () => {
                     var fake = Fixture(payload, current + "\r\n[Main]\r\nx=1\r\n", image); var engine = EngineFor(fake, payload); Assert(engine.Run() == 2 && fake.Stops == 0 && !(bool)engine.Report["NetworkUsed"], "Malformed configuration was replaced");

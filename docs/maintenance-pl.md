@@ -11,6 +11,14 @@ Uruchom w terminalu administratora:
 .\RDPWMaint.exe --auto
 ```
 
+`VerificationIncomplete` oznacza, że pliki, konfiguracja i lokalna odpowiedź RDP
+przeszły kontrolę, ale nie udało się potwierdzić załadowania DLL w procesie usługi.
+Raport podaje przyczynę i następny krok. Przy braku uprawnień administratora
+program zwraca kod 4 i zaleca ponowne `--check` w terminalu administratora.
+Jeśli modułów nie można odczytać mimo tych uprawnień, zwraca kod 1.
+Ten status sam w sobie nie uruchamia naprawy. Wykryta usterka innego sprawdzenia
+nadal daje `NeedsAttention` w diagnostyce.
+
 `--auto` wykonuje potrzebną instalację lub naprawę bez pytań i okien UAC.
 Odtwarza DLL z oryginalnej biblioteki zawartej w programie. Importuje wyłącznie
 sekcje INI dla dokładnej wersji `termsrv.dll` i brakujące definicje kodów.
@@ -53,10 +61,10 @@ Raporty bez uprawnień administratora: `%LOCALAPPDATA%\RDPWrapperMaintenance`.
 | Kod zakończenia | Znaczenie |
 | --- | --- |
 | 0 | Poprawny stan lub naprawa zakończona lokalną weryfikacją |
-| 1 | Diagnostyka wymaga uwagi lub nie można potwierdzić załadowania DLL |
+| 1 | Diagnostyka wymaga uwagi lub weryfikacja jest niepełna mimo uprawnień administratora |
 | 2 | Błąd; szczegóły w raporcie |
 | 3 | Wstrzymano przez sesję zdalną lub inną naprawę |
-| 4 | Potrzebne uprawnienia administratora |
+| 4 | Potrzebne uprawnienia administratora do weryfikacji lub zmian |
 
 Test lokalny nie zastępuje logowania z LAN. Po pierwszej naprawie sprawdź
 jednoczesną pracę dwóch osób na osobnych kontach.

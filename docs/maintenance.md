@@ -12,6 +12,14 @@ Run checks from an administrator terminal to inspect the actual modules loaded b
 TermService. A non-elevated check can confirm observed concurrent sessions but may
 be unable to enumerate the service's modules; the report records that limitation.
 
+If every other check passes but loaded modules cannot be inspected, both `--check`
+and `--auto` report `VerificationIncomplete`, with `Reason`, `Message` and
+`NextAction`. A non-elevated run returns 4 and requests an administrator check;
+an elevated run with unreadable modules returns 1. This state does not initiate
+repair. A detected problem in another check still reports `NeedsAttention`
+in diagnostic mode. Observed active concurrent sessions can confirm a healthy
+host even when direct module inspection is unavailable.
+
 ```powershell
 .\RDPWMaint.exe --check
 .\RDPWMaint.exe --auto
@@ -108,10 +116,10 @@ when nobody is connected. Test two real users after the first successful repair.
 | Exit | Meaning |
 | --- | --- |
 | 0 | Healthy, or successful verified repair/install |
-| 1 | Check needs attention, or runtime cannot be inspected confidently |
+| 1 | Check needs attention, or verification is incomplete despite elevation |
 | 2 | Operation failed; inspect the JSON report |
 | 3 | Held by a remote session or concurrent maintenance |
-| 4 | Administrator privileges required |
+| 4 | Administrator privileges required for verification or changes |
 
 ## Building and testing
 

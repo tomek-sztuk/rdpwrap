@@ -60,6 +60,8 @@ namespace RdpWrapMaintenance {
                         Console.WriteLine("RDP Wrapper: " + engine.Report["State"]);
                         object libraryMatches; engine.Report.TryGetValue("LibraryMatchesBundle", out libraryMatches);
                         Console.WriteLine("Termsrv: " + snapshot.Version + " | DLL: " + (libraryMatches ?? "Unknown") + " | runtime: " + snapshot.Runtime);
+                        object message; if (engine.Report.TryGetValue("Message", out message)) Console.WriteLine(message);
+                        object nextAction; if (engine.Report.TryGetValue("NextAction", out nextAction)) Console.WriteLine("Nastepny krok: " + nextAction);
                         object error; if (engine.Report.TryGetValue("Error", out error)) Console.WriteLine(error);
                         Console.WriteLine("Raport: " + path);
                         if (code == 0) Console.WriteLine("Test lokalny nie sprawdza logowania z LAN ani jakosci obrazu.");
@@ -94,7 +96,8 @@ namespace RdpWrapMaintenance {
             Console.WriteLine("RDPWMaint.exe --unregister-task          Admin: remove only this task");
             Console.WriteLine("RDPWMaint.exe --task-plan                Preview task XML; registers nothing");
             Console.WriteLine("RDPWMaint.exe --self-test                Tests use temporary fixtures, never services");
-            Console.WriteLine("Codes: 0 healthy; 1 diagnosis needs attention; 2 failure; 3 held; 4 admin required.");
+            Console.WriteLine("Codes: 0 healthy; 1 needs attention/incomplete verification; 2 failure; 3 held; 4 admin required.");
+            Console.WriteLine("VerificationIncomplete means runtime could not be inspected although other checks passed.");
             Console.WriteLine("Active/disconnected remote sessions block changes. No UAC, reboot, binary downloads,");
             Console.WriteLine("system DLL replacement, firewall, graphics or authentication changes.");
         }

@@ -238,15 +238,25 @@ namespace RdpWrapMaintenance {
                 bool iniGood = File.Exists(before.IniPath) && Supported(original, before), dllGood = before.WrapperHash == Files.Hash(payload.Wrapper);
                 bool pending = Pending(before);
                 bool runtimeGood = before.Runtime == "Loaded" || (before.Runtime == "Unknown" && before.Concurrent);
-                bool healthy = before.Registered && dllGood && iniGood && before.SignedTermsrv && before.ServiceRunning && before.Listener && before.RdpEnabled && before.SessionError == null && runtimeGood && !pending;
+                bool checksPassed = before.Registered && dllGood && iniGood && before.SignedTermsrv && before.ServiceRunning && before.Listener && before.RdpEnabled && before.SessionError == null && !pending;
+                bool healthy = checksPassed && runtimeGood;
                 Report["ExactVersionSupported"] = iniGood; Report["LibraryMatchesBundle"] = dllGood; Report["PendingServiceReload"] = pending;
-                if (options.CheckOnly || healthy) { Report["State"] = healthy ? "Healthy" : "NeedsAttention"; return healthy ? 0 : 1; }
+                if (healthy) { Report["State"] = "Healthy"; return 0; }
+                if (checksPassed && before.Runtime == "Unknown") {
+                    // All observable checks passed. Missing runtime evidence is
+                    // an incomplete verification, not a detected installation fault.
+                    Report["State"] = "VerificationIncomplete";
+                    Report["Reason"] = before.IsAdmin ? "RuntimeInspectionUnavailable" : "AdministratorRequiredForRuntimeInspection";
+                    Report["Message"] = "Weryfikacja niepelna: sprawdzone pliki, konfiguracja i odpowiedz RDP sa poprawne, ale nie mozna potwierdzic zaladowania DLL w procesie uslugi.";
+                    Report["NextAction"] = before.IsAdmin ? "Sprawdz Before.RuntimeError w raporcie; odczyt modulow jest niedostepny mimo uprawnien administratora." : "Uruchom PowerShell jako administrator i wykonaj RDPWMaint.exe --check.";
+                    return before.IsAdmin ? 1 : 4;
+                }
+                if (options.CheckOnly) { Report["State"] = "NeedsAttention"; return 1; }
                 if (!before.IsAdmin && before.SessionError != null) throw new MaintenanceException("Administrator privileges required to inspect sessions of the stopped/unreadable service", 4);
                 platform.GuardSessions();
                 if (!before.IsAdmin) throw new MaintenanceException("Administrator privileges required; unattended mode never opens UAC", 4);
                 if (!before.SignedTermsrv) throw new MaintenanceException("termsrv.dll signature is invalid; system DLLs are not replaced");
                 if (!before.RdpEnabled) throw new MaintenanceException("Windows Remote Desktop is disabled; access settings are left to the administrator");
-                if (before.Registered && dllGood && iniGood && before.ServiceRunning && before.Listener && before.Runtime == "Unknown" && !pending) throw new MaintenanceException("Runtime modules could not be inspected; no speculative service reload", 1);
                 if (PeImage.Read(payload.Wrapper).Architecture != before.Architecture) throw new MaintenanceException("Embedded wrapper architecture mismatch");
                 var changes = new List<string>(); string candidate = Candidate(original, before, changes); Report["Changes"] = changes;
                 Fresh(before);
